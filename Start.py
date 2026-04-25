@@ -3,6 +3,9 @@
 1. 创建 CookieManager，按配置文件 / 环境变量初始化账号任务
 2. 在后台线程启动 FastAPI (reply_server) 提供管理与自动回复接口
 3. 主协程保持运行
+
+个人备注：forked from zhinianboke/xianyu-auto-reply，用于学习和个人闲鱼账号管理。
+如需多账号支持，参考 CookieManager 的 add_account 方法。
 """
 
 import os
@@ -93,5 +96,4 @@ def _migrate_database_files_early():
                 except Exception as e:
                     print(f"{_WARN} 无法迁移{description}: {e}")
                     # 迁移失败时尝试复制，保留原文件作为备份
-                    print(f"  尝试复制文件（原文件将保留作为备份）...")
-                    try:
+                    print(f" 
