@@ -11,12 +11,12 @@ ENV PYTHONUNBUFFERED=1 \
 # 设置工作目录
 WORKDIR /app
 
-# 更换中科大源（兼容不同基础镜像）
+# 更换阿里云源（速度更稳定）
 RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
-        sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources; \
+        sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources; \
     fi && \
     if [ -f /etc/apt/sources.list ]; then \
-        sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list; \
+        sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list; \
     fi
 
 # ==================== Frontend Builder Stage ====================
@@ -41,7 +41,8 @@ RUN pnpm build
 FROM base AS builder
 
 # 项目已完全开源，简化构建流程
-ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+# 使用阿里云 PyPI 镜像，与 apt 源保持一致
+ENV PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple
 
 # 安装基础依赖   
 RUN apt-get update && \
@@ -121,45 +122,4 @@ RUN apt-get update && \
         libappindicator3-1 \
         libx11-xcb1 \
         libxfixes3 \
-        xdg-utils \
-        chromium \
-        # OpenCV运行时依赖
-        libgl1 \
-        libglib2.0-0 \
-        && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# 设置时区
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# 验证Node.js安装并设置环境变量
-RUN node --version && npm --version
-
-COPY --from=builder /opt/venv /opt/venv
-COPY --from=builder /app /app
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="$VIRTUAL_ENV/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin"
-
-# 安装Playwright浏览器（必须在复制项目文件之后）
-RUN playwright install chromium && \
-    playwright install-deps chromium
-
-# 创建必要的目录并设置权限
-RUN mkdir -p /app/logs /app/data /app/backups /app/static/uploads/images && \
-    chmod 777 /app/logs /app/data /app/backups /app/static/uploads /app/static/uploads/images
-
-# 配置系统限制，防止core文件生成
-RUN echo "ulimit -c 0" >> /etc/profile
-
-# 注意: 为了简化权限问题，使用root用户运行
-# 在生产环境中，建议配置适当的用户映射
-
-# 暴露端口
-EXPOSE 8080
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
-RUN chmod +x /app/entrypoint.sh
-
-# 启动命令
-CMD ["/app/entrypoint.sh"]
+  
